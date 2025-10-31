@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Séries Matemáticas - Versão Offline</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f4f4f4;
+      line-height: 1.6;
+    }
+    section {
+      background: #fff;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .plot-container {
+      width: 100%;
+      height: 400px;
+      margin: 20px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      overflow: hidden;
+      background: white;
+      position: relative;
+    }
+    .controls {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    .control-group {
+      margin-bottom: 10px;
+    }
+    label {
+      display: inline-block;
+      width: 180px;
+      font-weight: bold;
+    }
+    input[type="range"] {
+      width: 200px;
+      vertical-align: middle;
+    }
+    .value-display {
+      display: inline-block;
+      width: 80px;
+      text-align: center;
+      font-weight: bold;
+    }
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    .success {
+      color: #27ae60;
+      padding: 10px;
+      background: #d5f4e6;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .info {
+      background: #d6eaf8;
+      color: #2c3e50;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+    }
+    h2 {
+      color: #34495e;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+    }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #7f8c8d;
+    }
+  </style>
+</head>
+<body>
+  <h1>Séries Matemáticas - Taylor, Maclaurin e Fourier</h1>
+
+  <div class="info">
+    <strong>✅ Versão Offline:</strong> Esta aplicação funciona completamente offline sem Pyodide!
+  </div>
+
+  <!-- Série de Taylor -->
+  <section>
+    <h2>Série de Taylor - Aproximação de ln(x)</h2>
+    <p>A série de Taylor aproxima funções usando polinômios baseados nas derivadas em um ponto específico. Aqui aproximamos ln(x) em torno de x = 1.</p>
+    
+    <div class="controls">
+      <div class="control-group">
+        <label for="taylor-terms">Número de termos:</label>
+        <input type="range" id="taylor-terms" min="1" max="20" value="4">
+        <span id="taylor-terms-value" class="value-display">4</span>
+      </div>
+      <div class="control-group">
+        <label for="taylor-min">Intervalo mínimo:</label>
+        <input type="range" id="taylor-min" min="0.1" max="0.9" step="0.1" value="0.5">
+        <span id="taylor-min-value" class="value-display">0.5</span>
+      </div>
+      <div class="control-group">
+        <label for="taylor-max">Intervalo máximo:</label>
+        <input type="range" id="taylor-max" min="1.1" max="3.0" step="0.1" value="2.0">
+        <span id="taylor-max-value" class="value-display">2.0</span>
+      </div>
+      <button id="run-taylor">Executar Série de Taylor</button>
+      <button id="reset-taylor">Reiniciar</button>
+    </div>
+
+    <div id="taylor-status" class="status"></div>
+    <div class="plot-container" id="taylor-plot">
+      <canvas id="taylor-chart"></canvas>
+    </div>
+  </section>
+
+  <!-- Série de Maclaurin -->
+  <section>
+    <h2>Série de Maclaurin - Aproximação de sin(x)</h2>
+    <p>A série de Maclaurin é um caso especial da série de Taylor centrada em zero. Aqui aproximamos sin(x).</p>
+    
+    <div class="controls">
+      <div class="control-group">
+        <label for="maclaurin-terms">Número de termos:</label>
+        <input type="range" id="maclaurin-terms" min="1" max="10" value="3">
+        <span id="maclaurin-terms-value" class="value-display">3</span>
+      </div>
+      <div class="control-group">
+        <label for="maclaurin-range">Intervalo:</label>
+        <input type="range" id="maclaurin-range" min="5" max="20" value="10">
+        <span id="maclaurin-range-value" class="value-display">-10 a 10</span>
+      </div>
+      <button id="run-maclaurin">Executar Série de Maclaurin</button>
+      <button id="reset-maclaurin">Reiniciar</button>
+    </div>
+
+    <div id="maclaurin-status" class="status"></div>
+    <div class="plot-container" id="maclaurin-plot">
+      <canvas id="maclaurin-chart"></canvas>
+    </div>
+  </section>
+
+  <!-- Série de Fourier -->
+  <section>
+    <h2>Série de Fourier - Aproximação de f(x) = x</h2>
+    <p>A série de Fourier representa funções periódicas como soma de senos e cossenos. Aqui aproximamos f(x) = x no intervalo [-π, π].</p>
+    
+    <div class="controls">
+      <div class="control-group">
+        <label for="fourier-terms">Número de harmônicos:</label>
+        <input type="range" id="fourier-terms" min="1" max="100" value="10">
+        <span id="fourier-terms-value" class="value-display">10</span>
+      </div>
+      <button id="run-fourier">Executar Série de Fourier</button>
+      <button id="reset-fourier">Reiniciar</button>
+    </div>
+
+    <div id="fourier-status" class="status"></div>
+    <div class="plot-container" id="fourier-plot">
+      <canvas id="fourier-chart"></canvas>
+    </div>
+  </section>
+
+  <script>
+    // ========== FUNÇÕES MATEMÁTICAS ==========
+    
+    // Fatorial
+    function factorial(n) {
+      if (n === 0 || n === 1) return 1;
+      let result = 1;
+      for (let i = 2; i <= n; i++) {
+        result *= i;
+      }
+      return result;
+    }
+
+    // Série de Taylor para ln(x) em torno de x=1
+    function taylorLn(x, terms) {
+      let result = 0;
+      for (let k = 1; k <= terms; k++) {
+        const term = Math.pow(-1, k + 1) * Math.pow(x - 1, k) / k;
+        result += term;
+      }
+      return result;
+    }
+
+    // Série de Maclaurin para sin(x)
+    function maclaurinSin(x, terms) {
+      let result = 0;
+      for (let k = 0; k < terms; k++) {
+        const term = Math.pow(-1, k) * Math.pow(x, 2 * k + 1) / factorial(2 * k + 1);
+        result += term;
+      }
+      return result;
+    }
+
+    // Série de Fourier para f(x) = x
+    function fourierSeries(x, harmonics) {
+      let result = 0;
+      for (let n = 1; n <= harmonics; n++) {
+        result += 2 * Math.pow(-1, n + 1) / n * Math.sin(n * x);
+      }
+      return result;
+    }
+
+    // ========== CONFIGURAÇÃO DOS GRÁFICOS ==========
+    
+    let taylorChart, maclaurinChart, fourierChart;
+
+    function createChart(canvasId, config) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      return new Chart(ctx, config);
+    }
+
+    function destroyChart(chart) {
+      if (chart) {
+        chart.destroy();
+      }
+    }
+
+    // ========== SÉRIE DE TAYLOR ==========
+    
+    document.getElementById('taylor-terms').addEventListener('input', function() {
+      document.getElementById('taylor-terms-value').textContent = this.value;
+    });
+    
+    document.getElementById('taylor-min').addEventListener('input', function() {
+      document.getElementById('taylor-min-value').textContent = this.value;
+    });
+    
+    document.getElementById('taylor-max').addEventListener('input', function() {
+      document.getElementById('taylor-max-value').textContent = this.value;
+    });
+
+    document.getElementById('run-taylor').addEventListener('click', function() {
+      const terms = parseInt(document.getElementById('taylor-terms').value);
+      const min = parseFloat(document.getElementById('taylor-min').value);
+      const max = parseFloat(document.getElementById('taylor-max').value);
+      
+      // Gerar dados
+      const xValues = [];
+      const realValues = [];
+      const approxValues = [];
+      
+      const steps = 100;
+      for (let i = 0; i <= steps; i++) {
+        const x = min + (max - min) * i / steps;
+        xValues.push(x);
+        realValues.push(Math.log(x));
+        approxValues.push(taylorLn(x, terms));
+      }
+
+      // Configuração do gráfico
+      destroyChart(taylorChart);
+      taylorChart = createChart('taylor-chart', {
+        type: 'line',
+        data: {
+          labels: xValues.map(x => x.toFixed(2)),
+          datasets: [
+            {
+              label: 'ln(x) Real',
+              data: realValues,
+              borderColor: 'blue',
+              backgroundColor: 'rgba(0, 0, 255, 0.1)',
+              borderWidth: 2,
+              tension: 0.1
+            },
+            {
+              label: `Taylor (${terms} termos)`,
+              data: approxValues,
+              borderColor: 'red',
+              backgroundColor: 'rgba(255, 0, 0, 0.1)',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              tension: 0.1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'x'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'f(x)'
+              }
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: `Aproximação de ln(x) com Série de Taylor - ${terms} termos`
+            }
+          }
+        }
+      });
+
+      document.getElementById('taylor-status').innerHTML = 
+        `<div class="success">✅ Série de Taylor executada com sucesso! ${terms} termos no intervalo [${min}, ${max}]</div>`;
+    });
+
+    // ========== SÉRIE DE MACLAURIN ==========
+    
+    document.getElementById('maclaurin-terms').addEventListener('input', function() {
+      document.getElementById('maclaurin-terms-value').textContent = this.value;
+    });
+    
+    document.getElementById('maclaurin-range').addEventListener('input', function() {
+      const range = parseInt(this.value);
+      document.getElementById('maclaurin-range-value').textContent = `-${range} a ${range}`;
+    });
+
+    document.getElementById('run-maclaurin').addEventListener('click', function() {
+      const terms = parseInt(document.getElementById('maclaurin-terms').value);
+      const range = parseInt(document.getElementById('maclaurin-range').value);
+      
+      // Gerar dados
+      const xValues = [];
+      const realValues = [];
+      const approxValues = [];
+      
+      const steps = 200;
+      for (let i = 0; i <= steps; i++) {
+        const x = -range + (2 * range) * i / steps;
+        xValues.push(x);
+        realValues.push(Math.sin(x));
+        approxValues.push(maclaurinSin(x, terms));
+      }
+
+      // Configuração do gráfico
+      destroyChart(maclaurinChart);
+      maclaurinChart = createChart('maclaurin-chart', {
+        type: 'line',
+        data: {
+          labels: xValues.map(x => x.toFixed(1)),
+          datasets: [
+            {
+              label: 'sin(x) Real',
+              data: realValues,
+              borderColor: 'blue',
+              backgroundColor: 'rgba(0, 0, 255, 0.1)',
+              borderWidth: 2,
+              tension: 0.1
+            },
+            {
+              label: `Maclaurin (${terms} termos)`,
+              data: approxValues,
+              borderColor: 'red',
+              backgroundColor: 'rgba(255, 0, 0, 0.1)',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              tension: 0.1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'x'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'f(x)'
+              }
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: `Aproximação de sin(x) com Série de Maclaurin - ${terms} termos`
+            }
+          }
+        }
+      });
+
+      document.getElementById('maclaurin-status').innerHTML = 
+        `<div class="success">✅ Série de Maclaurin executada com sucesso! ${terms} termos no intervalo [-${range}, ${range}]</div>`;
+    });
+
+    // ========== SÉRIE DE FOURIER ==========
+    
+    document.getElementById('fourier-terms').addEventListener('input', function() {
+      document.getElementById('fourier-terms-value').textContent = this.value;
+    });
+
+    document.getElementById('run-fourier').addEventListener('click', function() {
+      const harmonics = parseInt(document.getElementById('fourier-terms').value);
+      
+      // Gerar dados
+      const xValues = [];
+      const realValues = [];
+      const approxValues = [];
+      
+      const steps = 300;
+      for (let i = 0; i <= steps; i++) {
+        const x = -Math.PI + (2 * Math.PI) * i / steps;
+        xValues.push(x);
+        realValues.push(x);
+        approxValues.push(fourierSeries(x, harmonics));
+      }
+
+      // Configuração do gráfico
+      destroyChart(fourierChart);
+      fourierChart = createChart('fourier-chart', {
+        type: 'line',
+        data: {
+          labels: xValues.map(x => x.toFixed(2)),
+          datasets: [
+            {
+              label: 'f(x) = x (Real)',
+              data: realValues,
+              borderColor: 'blue',
+              backgroundColor: 'rgba(0, 0, 255, 0.1)',
+              borderWidth: 2,
+              tension: 0.1
+            },
+            {
+              label: `Fourier (${harmonics} harmônicos)`,
+              data: approxValues,
+              borderColor: 'red',
+              backgroundColor: 'rgba(255, 0, 0, 0.1)',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              tension: 0.1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'x'
+              },
+              min: -Math.PI,
+              max: Math.PI
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'f(x)'
+              }
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: `Aproximação de f(x) = x com Série de Fourier - ${harmonics} harmônicos`
+            }
+          }
+        }
+      });
+
+      document.getElementById('fourier-status').innerHTML = 
+        `<div class="success">✅ Série de Fourier executada com sucesso! ${harmonics} harmônicos</div>`;
+    });
+
+    // ========== FUNÇÕES DE REINICIALIZAÇÃO ==========
+    
+    document.getElementById('reset-taylor').addEventListener('click', function() {
+      document.getElementById('taylor-terms').value = 4;
+      document.getElementById('taylor-terms-value').textContent = '4';
+      document.getElementById('taylor-min').value = 0.5;
+      document.getElementById('taylor-min-value').textContent = '0.5';
+      document.getElementById('taylor-max').value = 2.0;
+      document.getElementById('taylor-max-value').textContent = '2.0';
+      destroyChart(taylorChart);
+      document.getElementById('taylor-status').innerHTML = '';
+    });
+
+    document.getElementById('reset-maclaurin').addEventListener('click', function() {
+      document.getElementById('maclaurin-terms').value = 3;
+      document.getElementById('maclaurin-terms-value').textContent = '3';
+      document.getElementById('maclaurin-range').value = 10;
+      document.getElementById('maclaurin-range-value').textContent = '-10 a 10';
+      destroyChart(maclaurinChart);
+      document.getElementById('maclaurin-status').innerHTML = '';
+    });
+
+    document.getElementById('reset-fourier').addEventListener('click', function() {
+      document.getElementById('fourier-terms').value = 10;
+      document.getElementById('fourier-terms-value').textContent = '10';
+      destroyChart(fourierChart);
+      document.getElementById('fourier-status').innerHTML = '';
+    });
+
+    // ========== INICIALIZAÇÃO ==========
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Criar gráficos vazios inicialmente
+      taylorChart = createChart('taylor-chart', {
+        type: 'line',
+        data: { datasets: [] },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+      
+      maclaurinChart = createChart('maclaurin-chart', {
+        type: 'line',
+        data: { datasets: [] },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+      
+      fourierChart = createChart('fourier-chart', {
+        type: 'line',
+        data: { datasets: [] },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      document.getElementById('taylor-status').innerHTML = 
+        '<div class="success">✅ Pronto! Clique em "Executar Série de Taylor" para ver o gráfico.</div>';
+      document.getElementById('maclaurin-status').innerHTML = 
+        '<div class="success">✅ Pronto! Clique em "Executar Série de Maclaurin" para ver o gráfico.</div>';
+      document.getElementById('fourier-status').innerHTML = 
+        '<div class="success">✅ Pronto! Clique em "Executar Série de Fourier" para ver o gráfico.</div>';
+    });
+  </script>
+</body>
+</html>
